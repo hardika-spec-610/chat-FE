@@ -43,6 +43,10 @@ const Home = () => {
         setOnlineUsers(onlineUsersList);
         setLoggedIn(true);
       });
+
+      socket.on("updateOnlineUsersList", (updatedList) => {
+        setOnlineUsers(updatedList);
+      });
     });
   }, []);
 
@@ -89,6 +93,16 @@ const Home = () => {
         <Col md={3}>
           {/* ONLINE USERS SECTION */}
           <div className="mb-3">Connected users:</div>
+          {onlineUsers.length === 0 && (
+            <ListGroup.Item>Log in to check who's online!</ListGroup.Item>
+          )}
+          <ListGroup>
+            {onlineUsers.map((user) => (
+              <ListGroup.Item key={user.socketId}>
+                {user.username}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
         </Col>
       </Row>
     </Container>
