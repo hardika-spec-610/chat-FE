@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Container,
   Row,
@@ -9,6 +9,7 @@ import {
 } from "react-bootstrap";
 import { io } from "socket.io-client";
 import { Message, User } from "../types";
+import "./styles.css";
 
 // 1. Every time we refresh the page, we reconnect to the socket.io server
 // 2. If the connection is correctly established, the server will emit to us an event called 'welcome' containing a message with the id of the connection
@@ -70,9 +71,63 @@ const Home = () => {
       createdAt: new Date().toLocaleString("en-US"),
     };
     socket.emit("sendMessage", { message: newMessage });
+    setMessage("");
     setChatHistory([...chatHistory, newMessage]);
+    // setMessage("");
   };
+  const renderMessages = () => {
+    let prevDate: any | null = null;
+    return chatHistory.map((message, index) => {
+      let currentDate = new Date(message.createdAt).toLocaleDateString();
+      let messageTime = new Date(message.createdAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      let date = null;
 
+      const messageDate = new Date(message.createdAt);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      let dateDisplay;
+      if (messageDate.toDateString() === today.toDateString()) {
+        dateDisplay = "Today";
+      } else if (messageDate.toDateString() === yesterday.toDateString()) {
+        dateDisplay = "Yesterday";
+      } else {
+        dateDisplay = messageDate.toLocaleDateString();
+      }
+
+      if (currentDate !== prevDate) {
+        date = (
+          <ListGroup.Item
+            className="text-center text-muted border-0 "
+            key={index}
+          >
+            {dateDisplay}
+          </ListGroup.Item>
+        );
+        prevDate = currentDate;
+      }
+
+      return (
+        <React.Fragment key={index}>
+          {date}
+          <ListGroup.Item
+            className={
+              message.sender === username
+                ? "sender-message"
+                : "receiver-message"
+            }
+          >
+            <strong>{message.sender}: </strong>
+            {message.text} <span className="text-muted">{messageTime}</span>
+          </ListGroup.Item>
+        </React.Fragment>
+      );
+    });
+  };
   return (
     <Container fluid>
       <Row style={{ height: "95vh" }} className="my-3">
@@ -95,14 +150,57 @@ const Home = () => {
           </Form>
           {/* )} */}
           {/* MIDDLE AREA: CHAT HISTORY */}
-          <ListGroup>
+          <ListGroup className="chat-area">{renderMessages()}</ListGroup>
+          {/* <ListGroup className="chat-area">
             {chatHistory.map((message, index) => (
-              <ListGroup.Item key={index}>
-                {<strong>{message.sender} </strong>} | {message.text} at{" "}
-                {message.createdAt}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+              <ListGroup.Item
+                key={index}
+                className={
+                  message.sender === username
+                    ? "sender-message"
+                    : "receiver-message"
+                }
+              >
+                {<strong>{message.sender} </strong>} | {message.text}
+                <small className="text-muted"> at {message.createdAt}</small>
+              </ListGroup.Item> )
+            )}
+          </ListGroup> */}
+          {/* <ListGroup className="chat-area">
+            {chatHistory.map((message, index) => {
+              const messageDate = new Date(message.createdAt);
+              const today = new Date();
+              const yesterday = new Date(today);
+              yesterday.setDate(yesterday.getDate() - 1);
+
+              let dateDisplay;
+              if (messageDate.toDateString() === today.toDateString()) {
+                dateDisplay = "Today";
+              } else if (
+                messageDate.toDateString() === yesterday.toDateString()
+              ) {
+                dateDisplay = "Yesterday";
+              } else {
+                dateDisplay = messageDate.toLocaleDateString();
+              }
+
+              return (
+                <>
+                  <small className="text-muted"> at {dateDisplay}</small>
+                  <ListGroup.Item
+                    key={index}
+                    className={
+                      message.sender === username
+                        ? "sender-message"
+                        : "receiver-message"
+                    }
+                  >
+                    {<strong>{message.sender} </strong>} | {message.text}
+                  </ListGroup.Item>
+                </>
+              );
+            })}
+          </ListGroup> */}
           {/* BOTTOM AREA: NEW MESSAGE */}
           <Form
             onSubmit={(e) => {
