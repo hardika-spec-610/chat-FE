@@ -6,7 +6,6 @@ import {
   Form,
   FormControl,
   ListGroup,
-  Button,
 } from "react-bootstrap";
 import { io } from "socket.io-client";
 import { Message, User } from "../types";
@@ -47,6 +46,15 @@ const Home = () => {
       socket.on("updateOnlineUsersList", (updatedList) => {
         setOnlineUsers(updatedList);
       });
+
+      socket.on("newMessage", (newMessage) => {
+        console.log(newMessage);
+        // setChatHistory([...chatHistory, newMessage.message])
+        // if we set the state just by passing a value, the new message will be appended to the INITIAL state of the component (empty chat history [])
+        // since we don't want that, we should use the set state function by passing a callback function instead
+        // this is going to give us the possibility to access to the CURRENT state of the component (chat history filled with some messages)
+        setChatHistory((chatHistory) => [...chatHistory, newMessage.message]);
+      });
     });
   }, []);
 
@@ -54,6 +62,17 @@ const Home = () => {
     // here we will be emitting the "setUsername" event (server is already listening for that)
     socket.emit("setUsername", { username });
   };
+
+  const sendMessage = () => {
+    const newMessage = {
+      sender: username,
+      text: message,
+      createdAt: new Date().toLocaleString("en-US"),
+    };
+    socket.emit("sendMessage", { message: newMessage });
+    setChatHistory([...chatHistory, newMessage]);
+  };
+
   return (
     <Container fluid>
       <Row style={{ height: "95vh" }} className="my-3">
@@ -76,17 +95,26 @@ const Home = () => {
           </Form>
           {/* )} */}
           {/* MIDDLE AREA: CHAT HISTORY */}
-          <ListGroup></ListGroup>
+          <ListGroup>
+            {chatHistory.map((message, index) => (
+              <ListGroup.Item key={index}>
+                {<strong>{message.sender} </strong>} | {message.text} at{" "}
+                {message.createdAt}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
           {/* BOTTOM AREA: NEW MESSAGE */}
           <Form
             onSubmit={(e) => {
               e.preventDefault();
+              sendMessage();
             }}
           >
             <FormControl
               placeholder="Write your message here"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              disabled={!loggedIn}
             />
           </Form>
         </Col>
